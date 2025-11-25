@@ -14,3 +14,5 @@ __pycache__/
 
 # системное
 .DS_Store
+
+.idea/
