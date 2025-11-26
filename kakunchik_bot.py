@@ -8,6 +8,9 @@ from aiogram.types import Message
 from aiogram.filters import Command
 import aiosqlite
 from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+import uvicorn
+from aiogram.types import Update
 
 load_dotenv()
 
@@ -217,12 +220,31 @@ async def cmd_leaderboard(msg: Message):
 
 # ---------- Main ----------
 
-async def main():
+WEBHOOK_PATH = "/webhook"
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+
+app = FastAPI()
+bot = Bot(BOT_TOKEN)
+dp = Dispatcher()
+dp.include_router(router)
+
+@app.on_event("startup")
+async def on_startup():
     await init_db()
-    bot = Bot(BOT_TOKEN)
-    dp = Dispatcher()
-    dp.include_router(router)
-    await dp.start_polling(bot)
+    if WEBHOOK_URL:
+        await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH)
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    await bot.delete_webhook()
+
+@app.post(WEBHOOK_PATH)
+async def telegram_webhook(request: Request):
+    data = await request.json()
+    update = Update.model_validate(data)
+    await dp.feed_update(bot, update)
+    return {"ok": True}
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+
