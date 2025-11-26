@@ -233,8 +233,6 @@ async def on_startup():
     await init_db()
     await bot.delete_webhook(drop_pending_updates=True)
 
-    await set_commands(bot)
-
     print("WEBHOOK_URL =", WEBHOOK_URL)
     print("FULL WEBHOOK =", (WEBHOOK_URL or "") + WEBHOOK_PATH)
 
