@@ -221,7 +221,7 @@ async def cmd_leaderboard(msg: Message):
 # ---------- Main ----------
 
 WEBHOOK_PATH = "/webhook"
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL") or os.getenv("RENDER_EXTERNAL_URL")
 
 app = FastAPI()
 bot = Bot(BOT_TOKEN)
@@ -231,8 +231,16 @@ dp.include_router(router)
 @app.on_event("startup")
 async def on_startup():
     await init_db()
+    await bot.delete_webhook(drop_pending_updates=True)
+
+    await set_commands(bot)
+
+    print("WEBHOOK_URL =", WEBHOOK_URL)
+    print("FULL WEBHOOK =", (WEBHOOK_URL or "") + WEBHOOK_PATH)
+
     if WEBHOOK_URL:
         await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH)
+
 
 @app.on_event("shutdown")
 async def on_shutdown():
